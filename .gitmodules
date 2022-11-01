@@ -1,0 +1,3 @@
+[submodule "ConfrontaPDF"]
+	path = ConfrontaPDF
+	url = https://github.com/lbellonda/ConfrontaPDF.git
