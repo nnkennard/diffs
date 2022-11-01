@@ -6,9 +6,9 @@ import tqdm
 
 def main():
 
-  for dir_name in tqdm.tqdm(glob.glob("data/pdfs/iclr_2019/*")):
+  for dir_name in tqdm.tqdm(glob.glob("data/pdfs/iclr_2020/*")):
     forum_id = dir_name.split("/")[-1]
-    xml_dir = f"data/xmls/iclr_2019/{forum_id}/"
+    xml_dir = f"data/xmls/iclr_2020/{forum_id}/"
     os.makedirs(xml_dir, exist_ok=True)
 
     if len(glob.glob(f"{dir_name}/*")) == 1:
