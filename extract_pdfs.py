@@ -72,11 +72,12 @@ class EventType(object):
   ARTIFACT = "artifact"
 
 
-def make_metadata_dict(reference, file_path, reference_index, pdf_status,
+def make_metadata_dict(reference, original_id, file_path, reference_index, pdf_status,
                        event_type):
   return {
       "forum": reference.forum,
       "initiator": get_initiator(reference),
+      "original": original_id,
       "identifier": reference.id,
       "tcdate": reference.tcdate,
       "tmdate": reference.tmdate,
@@ -123,7 +124,7 @@ def write_artifact(
     error_name = e.args[0]["name"]
     pdf_status = ERROR_STATUS_LOOKUP[error_name]
 
-  return checksum_map, make_metadata_dict(reference, pdf_path, reference_index,
+  return checksum_map, make_metadata_dict(reference, reference.forum, pdf_path, reference_index,
                                           pdf_status, EventType.ARTIFACT)
 
 
@@ -135,6 +136,7 @@ def write_comment(conference, note_id, reference, reference_index, directories):
     json.dump(reference.content, f)
   return make_metadata_dict(
       reference,
+      note_id,
       json_path,
       reference_index,
       PDFStatus.NOT_APPLICABLE,
