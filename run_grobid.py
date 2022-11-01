@@ -3,16 +3,17 @@ import os
 import subprocess
 import tqdm
 
+
 def main():
 
-  for dir_name in tqdm.tqdm(glob.glob('data/pdfs/iclr_2019/*')):
+  for dir_name in tqdm.tqdm(glob.glob("data/pdfs/iclr_2019/*")):
     forum_id = dir_name.split("/")[-1]
-    xml_dir = f'data/xmls/iclr_2019/{forum_id}/'
+    xml_dir = f"data/xmls/iclr_2019/{forum_id}/"
     os.makedirs(xml_dir, exist_ok=True)
 
-    if len(glob.glob(f'{dir_name}/*')) == 1:
+    if len(glob.glob(f"{dir_name}/*")) == 1:
       continue
-    
+
     subprocess.run([
         "java",
         "-Xmx4G",
@@ -28,10 +29,9 @@ def main():
         "-exe",
         "processFullText",
     ],
-    
-        #stdout=subprocess.DEVNULL,
-        #stderr=subprocess.DEVNULL,
-    )
+                   # stdout=subprocess.DEVNULL,
+                   # stderr=subprocess.DEVNULL,
+                  )
 
 
 if __name__ == "__main__":

@@ -10,23 +10,31 @@ import tqdm
 from datetime import datetime
 
 parser = argparse.ArgumentParser(description="")
-parser.add_argument("-o", "--output_dir", default="data/text/", type=str, help="")
-parser.add_argument("-p", "--pdf_output_dir", default="data/pdfs/", type=str, help="")
+parser.add_argument("-o",
+                    "--output_dir",
+                    default="data/text/",
+                    type=str,
+                    help="")
+parser.add_argument("-p",
+                    "--pdf_output_dir",
+                    default="data/pdfs/",
+                    type=str,
+                    help="")
 parser.add_argument("-c",
                     "--conference",
                     default="iclr_2019",
                     type=str,
                     help="")
 parser.add_argument("-f", "--offset", default=0, type=int, help="")
-parser.add_argument('-d', '--debug', action='store_true', help='')
-
+parser.add_argument("-d", "--debug", action="store_true", help="")
 
 INVITATION_MAP = {
-  f'iclr_{year}': f'ICLR.cc/{year}/Conference/-/Blind_Submission' for year in range(2018, 2023)
+    f"iclr_{year}": f"ICLR.cc/{year}/Conference/-/Blind_Submission"
+    for year in range(2018, 2023)
 }
 
-
 # ==== HELPERS
+
 
 def make_path(directories, filename=None):
   directory = os.path.join(*directories)
@@ -86,8 +94,15 @@ ERROR_STATUS_LOOKUP = {
 }
 
 
-def write_artifact(guest_client, conference, note_id, reference, reference_index, directories,
-                   checksum_map):
+def write_artifact(
+    guest_client,
+    conference,
+    note_id,
+    reference,
+    reference_index,
+    directories,
+    checksum_map,
+):
   pdf_path = make_path(directories, f"artifact_{note_id}_{reference_index}.pdf")
   is_reference = not reference.id == reference.forum
   try:  # try to get the PDF for this reference
@@ -178,10 +193,12 @@ def main():
         # does not make sense for comment notes.
         for ref_i, reference in enumerate(references):
           events.append(
-              write_comment(args.conference, note.id, reference, ref_i, text_path))
+              write_comment(args.conference, note.id, reference, ref_i,
+                            text_path))
 
     pd.DataFrame.from_dict(events).to_csv(
-        f"{args.output_dir}/{args.conference}/events_{page_number}.tsv", sep="\t")
+        f"{args.output_dir}/{args.conference}/events_{page_number}.tsv",
+        sep="\t")
     if args.debug:
       break
 
