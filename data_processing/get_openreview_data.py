@@ -1,5 +1,6 @@
 import argparse
 import collections
+import csv
 import hashlib
 import json
 import openreview
@@ -18,7 +19,6 @@ parser.add_argument("-c",
                     choices=INVITATION_MAP.keys(),
                     help="")
 
-
 BATCH_SIZE = 10
 GUEST_CLIENT = openreview.Client(baseurl="https://api.openreview.net")
 
@@ -33,7 +33,7 @@ def make_path(directories, filename=None):
 
 def get_sorted_references(note):
   return [note] + sorted(
-      GUEST_CLIENT.get_references(referent=note.id, original=False),
+      GUEST_CLIENT.get_references(referent=note.id, original=True),
       key=lambda x: x.tcdate,
   )
 
@@ -45,27 +45,29 @@ def clean_timestamp(timestamp):
 
 def get_initiator(note):
   initiator = "|".join([s.split("/")[-1] for s in note.signatures])
-  if 'Conference' in initiator:
+  if "Conference" in initiator:
     initiator_type = Initiator.CONFERENCE
   return initiator, initiator_type
 
+
 def get_manuscript_base_path(output_dir, forum):
-  return f'{output_dir}/{forum}'
+  return f"{output_dir}/{forum}"
 
 
 ##### PRODUCE DATA #####
 # submissions and revisions
 def write_artifact(
-    revision, 
+    revision,
     revision_index,
     manuscript_base_path,
     checksum_to_path,
-    ):
+):
 
-  is_reference = revision_index == 0
-  pdf_path = f'{manuscript_base_path}__{revision_index}.pdf'
-  json_path = f'{manuscript_base_path}__{revision_index}.json'
-  with open(json_path, 'w') as f:
+  assert (revision_index == 0) == (revision.referent is None)
+  is_reference = revision_index != 0
+  pdf_path = f"{manuscript_base_path}__{revision_index}.pdf"
+  json_path = f"{manuscript_base_path}__{revision_index}.json"
+  with open(json_path, "w") as f:
     json.dump(revision.to_json(), f)
 
   this_checksum = None
@@ -86,9 +88,10 @@ def write_artifact(
 
   return pdf_status, this_checksum
 
+
 def get_paper_paths(forum, revision_index, output_dir):
-  path_base = f'{output_dir}/{forum}__{revision_index}'
-  return f'{path_base}.json', f'{path_base}.pdf'
+  path_base = f"{output_dir}/{forum}__{revision_index}"
+  return f"{path_base}.json", f"{path_base}.pdf"
 
 
 def process_manuscript_and_revisions(forum_note, conference, output_dir):
@@ -107,7 +110,8 @@ def process_manuscript_and_revisions(forum_note, conference, output_dir):
     manuscript_base_path = get_manuscript_base_path(output_dir, forum)
 
     pdf_status, checksum = write_artifact(revision, revision_index,
-        manuscript_base_path, checksum_to_path)
+                                          manuscript_base_path,
+                                          checksum_to_path)
 
     events.append(
         Event(
@@ -122,7 +126,7 @@ def process_manuscript_and_revisions(forum_note, conference, output_dir):
             mod_date=revision.tmdate,
             event_type=orl.get_event_type(revision, conference),
             reply_to_type=None,
-            json_path=f'{manuscript_base_path}__{revision_index}.json',
+            json_path=f"{manuscript_base_path}__{revision_index}.json",
             pdf_path=checksum_to_path.get(checksum, None),
             pdf_status=pdf_status,
             pdf_checksum=checksum,
@@ -141,17 +145,20 @@ def main():
           GUEST_CLIENT, invitation=INVITATION_MAP[args.conference]))
 
   events = []
-  #for i in tqdm.tqdm(range(args.offset, len(forum_notes), BATCH_SIZE)):
-  for i in tqdm.tqdm(range(args.offset, 20, BATCH_SIZE)):
+  for i in tqdm.tqdm(range(args.offset, len(forum_notes), BATCH_SIZE)):
     forum_notes_subset = forum_notes[i:i + BATCH_SIZE]
     page_number = str(int(i / BATCH_SIZE)).zfill(4)
 
     for forum_note in tqdm.tqdm(forum_notes_subset):
       events += process_manuscript_and_revisions(forum_note, args.conference,
-          args.output_dir)
-      
-  for i in events:
-    print("\t".join(str(j) for j in i._asdict().values()))
+                                                 args.output_dir)
+
+  with open(f'{args.output_dir}/metadata_{args.conference}.tsv', 'w') as f:
+    writer = csv.DictWriter(f, fieldnames=orl.EVENT_FIELDS, delimiter='\t')
+    writer.writeheader()
+    for event in sorted(events):
+      writer.writerow(event._asdict())
+
 
 if __name__ == "__main__":
   main()

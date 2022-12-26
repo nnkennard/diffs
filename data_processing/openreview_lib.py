@@ -41,10 +41,10 @@ PDF_ERROR_STATUS_LOOKUP = {
 EVENT_FIELDS = [
     # Identifiers
     "forum_id",
+    "revision_index",
     "note_id",
     "referent_id",
     "reply_to",
-    "revision_index",
     # Creator info
     "initiator",
     "initiator_type",  # One of the Initiator strings
@@ -65,8 +65,8 @@ Event = collections.namedtuple("Event", EVENT_FIELDS)
 
 
 def get_event_type(note, conference):
-  if conference == "iclr_2018":
-    if 'review' in note.content:
+  if conference in ["iclr_2018", "iclr_2019"]:
+    if "review" in note.content:
       return EventType.REVIEW
     elif note.id == note.forum:
       return EventType.MANUSCRIPT
