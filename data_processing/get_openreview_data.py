@@ -153,8 +153,8 @@ def main():
       events += process_manuscript_and_revisions(forum_note, args.conference,
                                                  args.output_dir)
 
-  with open(f'{args.output_dir}/metadata_{args.conference}.tsv', 'w') as f:
-    writer = csv.DictWriter(f, fieldnames=orl.EVENT_FIELDS, delimiter='\t')
+  with open(f"{args.output_dir}/metadata_{args.conference}.tsv", "w") as f:
+    writer = csv.DictWriter(f, fieldnames=orl.EVENT_FIELDS, delimiter="\t")
     writer.writeheader()
     for event in sorted(events):
       writer.writerow(event._asdict())
