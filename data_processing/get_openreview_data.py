@@ -69,11 +69,12 @@ def get_pdf_status(note, is_reference=True):
         pdf_status = orl.PDFStatus.AVAILABLE
     except openreview.OpenReviewException as e:
         pdf_status = orl.PDF_ERROR_STATUS_LOOKUP[e.args[0]["name"]]
-        pdf_binary = None
-        pdf_checksum = None
+        pdf_binary = "None"
+        pdf_checksum = "None"
     return pdf_status, pdf_binary, pdf_checksum
 
 def write_pdf(pdf_binary, pdf_path):
+    assert pdf_binary != "None"
     with open(pdf_path, "wb") as f:
         f.write(pdf_binary)
 
@@ -207,7 +208,7 @@ def process_comment(comment_note, forum_id, forum_comment_dir):
         events.append(orl.Event(
             # Identifiers
             forum_id=forum_id, # we don't use note.forum which may be None
-            referent_id=note.referent,
+            referent_id=note.referent if note.referent is not None else "None",
             revision_index=revision_index,
             note_id=note.id,
             reply_to=note.replyto,
@@ -222,8 +223,8 @@ def process_comment(comment_note, forum_id, forum_comment_dir):
             # File info
             json_path=json_path,
             pdf_status=orl.PDFStatus.NOT_APPLICABLE,
-            pdf_path=None,
-            pdf_checksum=None,
+            pdf_path="None",
+            pdf_checksum="None",
         ))
 
     return events

@@ -66,9 +66,9 @@ class EventType(object):
     PUBLIC_COMMENT      = "public_comment" # comments from public readers
 
 REVISION_TO_INDEX = {
-    EventType.PRE_REBUTTAL_REVISION:    1,
-    EventType.REBUTTAL_REVISION:        2,
-    EventType.FINAL_REVISION:           3,
+    EventType.PRE_REBUTTAL_REVISION:    0,
+    EventType.REBUTTAL_REVISION:        1,
+    EventType.FINAL_REVISION:           2,
 }
 
 # Map conference-specific comment event types to our unified set of event types.
