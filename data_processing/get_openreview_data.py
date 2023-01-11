@@ -80,7 +80,7 @@ def write_pdf(pdf_binary, pdf_path):
 
 
 ##### PRODUCE DATA #####
-def process_manuscript_revisions(forum_note, forum_dir, args):
+def process_manuscript_revisions(forum_note, forum_idx, forum_dir, args):
     forum_id = forum_note.id
     original_id = forum_note.original
 
@@ -164,6 +164,7 @@ def process_manuscript_revisions(forum_note, forum_dir, args):
         # create an Event for this note
         events.append(orl.Event(
             # Identifiers
+            forum_idx=forum_idx,
             forum_id=forum_id, # we don't use note.forum which may be None
             referent_id=forum_id,
             revision_index=revision_index,
@@ -187,7 +188,7 @@ def process_manuscript_revisions(forum_note, forum_dir, args):
     return events
 
 
-def process_comment(comment_note, forum_id, forum_comment_dir):
+def process_comment(comment_note, forum_idx, forum_id, forum_comment_dir):
     events = []
 
     # classify the comment
@@ -210,6 +211,7 @@ def process_comment(comment_note, forum_id, forum_comment_dir):
         # create an Event for this note
         events.append(orl.Event(
             # Identifiers
+            forum_idx=forum_idx,
             forum_id=forum_id, # we don't use note.forum which may be None
             referent_id=note.referent if note.referent is not None else "None",
             revision_index=revision_index,
@@ -255,9 +257,10 @@ def main():
         events = []
 
         # loop over forums in this batch
-        for forum_note in tqdm.tqdm(
+        for j, forum_note in enumerate(tqdm.tqdm(
                 forum_notes[args.offset + i * args.batch_size: args.offset + (i + 1) * args.batch_size]
-        ):
+        )):
+            forum_idx = args.offset + i * args.batch_size + j
             forum_dir = os.path.join(
                 args.output_dir, args.conference, forum_note.id
             )  # for {pre-rebuttal, rebuttal, final}_revision.{pdf, json}
@@ -266,7 +269,7 @@ def main():
             )  # for {comment_id}_{revision_index}.json
 
             # three revisions: pre-rebuttal, rebuttal, final
-            forum_events = process_manuscript_revisions(forum_note, forum_dir, args)
+            forum_events = process_manuscript_revisions(forum_note, forum_idx, forum_dir, args)
 
             # loop over comments in this forum
             for comment_note in sorted(
@@ -278,7 +281,7 @@ def main():
                     continue
 
                 # process comments by authors, reviewers, metareviewers
-                forum_events += process_comment(comment_note, forum_note.id, forum_comment_dir)
+                forum_events += process_comment(comment_note, forum_idx, forum_note.id, forum_comment_dir)
 
             # events += sorted(forum_events, key=lambda x: x.creation_date)
             events += forum_events

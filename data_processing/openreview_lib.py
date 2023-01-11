@@ -3,6 +3,7 @@ import collections
 
 EVENT_FIELDS = [
     # Identifiers
+    "forum_idx",
     "forum_id",
     "referent_id",
     "revision_index",   # 0 indicates the referent, 1 is the first actual revision
