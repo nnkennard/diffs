@@ -2,7 +2,7 @@
 This script collects the following events from Open Review,
 saves event metadata to tsv, and
 saves paper revisions to pdf and Notes to json.
-1. Paper revisions, picked according to tmdate since our extracted contents were submitted at tmdate
+1. Paper revisions, picked according to tmdate since our retrieved contents were submitted at tmdate
   a) pre-rebuttal: the last submission revision before the review release or rebuttal starting time
   b) rebuttal: the last rebuttal revision before the rebuttal ending time
   c) final: the last revision which is assumed to be the camera ready version (some conferences
@@ -44,10 +44,11 @@ parser.add_argument("-c", "--conference", type=str, choices=conflib.CONFERENCE_T
                     help="conference_year, e.g. iclr_2022")
 parser.add_argument("-f", "--offset", default=0, type=int,
                     help="skip a number of submissions")
-parser.add_argument("-b", "--batch_size", default=10, type=int,
+parser.add_argument("-b", "--batch_size", default=None, type=int,
                     help="if set, process just a small number of submissions to test this script")
 parser.add_argument("-o", "--output_dir", default="data/", type=str,
                     help="output directory for metadata tsv, json, and pdf files")
+parser.add_argument("--debug", action='store_true', help="only process one batch")
 
 
 ##### HELPERS #####
@@ -78,7 +79,7 @@ def write_pdf(pdf_binary, pdf_path):
 
 
 ##### PRODUCE DATA #####
-def process_manuscript_revisions(forum_note, forum_dir):
+def process_manuscript_revisions(forum_note, forum_dir, args):
     forum_id = forum_note.id
     original_id = forum_note.original
 
@@ -128,7 +129,12 @@ def process_manuscript_revisions(forum_note, forum_dir):
     # assert that the forum note has the same pdf as the last revision
     pdf_status, pdf_binary, pdf_checksum = get_pdf_status(forum_note, is_reference=False)
     if pdf_status == orl.PDFStatus.AVAILABLE:
-        assert pdf_checksum == revisions[orl.EventType.FINAL_REVISION][-1]
+        if revisions[orl.EventType.FINAL_REVISION] is not None:
+            assert pdf_checksum == revisions[orl.EventType.FINAL_REVISION][-1]
+        elif revisions[orl.EventType.REBUTTAL_REVISION] is not None:
+            assert pdf_checksum == revisions[orl.EventType.REBUTTAL_REVISION][-1]
+        else:
+            assert pdf_checksum == revisions[orl.EventType.PRE_REBUTTAL_REVISION][-1]
 
     # create events and save files
     events = []
@@ -141,7 +147,7 @@ def process_manuscript_revisions(forum_note, forum_dir):
         assert note.referent == forum_id
         revision_index = orl.REVISION_TO_INDEX[event_type]
         assert note.replyto is None
-        initiator, initiator_type = orl.get_initiator_and_type(note.signatures, args.conference)
+        initiator, initiator_type = orl.get_initiator_and_type(note.signatures)
         assert initiator_type == orl.InitiatorType.CONFERENCE
 
         # save json
@@ -167,7 +173,6 @@ def process_manuscript_revisions(forum_note, forum_dir):
             mod_date=note.tmdate,
             # Event type info
             event_type=event_type,
-            reply_to_type=None,
             # File info
             json_path=json_path,
             pdf_status=pdf_status,
@@ -182,24 +187,20 @@ def process_comment(comment_note, forum_id, forum_comment_dir):
     events = []
 
     # classify the comment
-    event_type = orl.get_comment_event_type(comment_note, args.conference)
+    event_type = orl.get_comment_event_type(comment_note)
 
     # Official Review may have multiple revisions, others comments do not
     if event_type == orl.EventType.REVIEW:
-        notes = sorted(
-            GUEST_CLIENT.get_all_references(referent=comment_note.id),
-            key=lambda x: x.tcdate
-        )
-        # TODO assert that comment_note has the same content as its the latest reference
+        notes = [comment_note] + GUEST_CLIENT.get_all_references(referent=comment_note.id)
     else:
         # other comments don't have revisions, just save the comments notes
         notes = [comment_note]
 
     for revision_index, note in enumerate(notes):
-        initiator, initiator_type = orl.get_initiator_and_type(note.signatures, args.conference)
+        initiator, initiator_type = orl.get_initiator_and_type(note.signatures)
 
         # save json
-        json_path = make_path([forum_comment_dir], f"{comment_note.id}_{revision_index}.json") # TODO
+        json_path = make_path([forum_comment_dir], f"{comment_note.id}_{revision_index}.json")
         write_note_json(note, json_path)
 
         # create an Event for this note
@@ -218,7 +219,6 @@ def process_comment(comment_note, forum_id, forum_comment_dir):
             mod_date=note.tmdate,
             # Event type info
             event_type=event_type,
-            reply_to_type=None, # TODO None or one of event_type
             # File info
             json_path=json_path,
             pdf_status=orl.PDFStatus.NOT_APPLICABLE,
@@ -232,6 +232,7 @@ def process_comment(comment_note, forum_id, forum_comment_dir):
 def main():
     args = parser.parse_args()
     assert args.conference in conflib.CONFERENCE_TO_INVITATION
+    print(conflib.CONFERENCE_TO_TIMES[args.conference])
 
     # Get all 'forum' notes (blind submission notes) from the conference; one forum note per paper
     forum_notes = sorted(
@@ -261,7 +262,7 @@ def main():
             )  # for {comment_id}_{revision_index}.json
 
             # three revisions: pre-rebuttal, rebuttal, final
-            forum_events = process_manuscript_revisions(forum_note, forum_dir)
+            forum_events = process_manuscript_revisions(forum_note, forum_dir, args)
 
             # loop over comments in this forum
             for comment_note in sorted(
@@ -288,6 +289,9 @@ def main():
             writer.writeheader()
             for event in events:
                 writer.writerow(event._asdict())
+
+        if args.debug:
+            exit()
 
 
 if __name__ == "__main__":

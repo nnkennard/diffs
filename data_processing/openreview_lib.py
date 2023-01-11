@@ -16,7 +16,6 @@ EVENT_FIELDS = [
     "mod_date",         # 'true modification date' from OpenReview
     # Event type info
     "event_type",       # see below
-    "reply_to_type",    # None for paper revisions; one of EventType strings for comments
     # File info
     "json_path",
     "pdf_status",
@@ -35,15 +34,23 @@ class InitiatorType(object):
     METAREVIEWER    = "metareviewer"
     OTHER           = "other"
 
-# TODO Map conference-specific initiator types to our unified set of initiator types
-def get_initiator_and_type(signatures, conference):
+# Map conference-specific initiator types to our unified set of initiator types.
+# See notebooks in the explore_conferences directory for conference-specific initiator types.
+def get_initiator_and_type(signatures):
     initiators = [s.split("/")[-1] for s in signatures]
     combined_initiators = "|".join(initiators)
 
-    for initiator in initiators:
-        if "Conference" in initiator:
-            return combined_initiators, InitiatorType.CONFERENCE
-
+    initiator = initiators[0].split("/")[-1]
+    if "Conference" in initiator:
+        return combined_initiators, InitiatorType.CONFERENCE
+    elif "Authors" == initiator:
+        return combined_initiators, InitiatorType.AUTHOR
+    elif "Reviewer" in initiator:
+        return combined_initiators, InitiatorType.REVIEWER
+    elif "Chair" in initiator:
+        return combined_initiators, InitiatorType.METAREVIEWER
+    else:
+        return combined_initiators, InitiatorType.OTHER
 
 
 # A unified set of event types shared by all venues
@@ -55,8 +62,8 @@ class EventType(object):
     # comments
     REVIEW              = "review"  # Official_Review which may have multiple revisions
     METAREVIEW          = "metareview"
-    COMMENT             = "comment" # all other comments, whose types can be inferred
-                                    # from initiator_type and reply_to_type
+    COMMENT             = "comment" # other official comments, with various initiator_type
+    PUBLIC_COMMENT      = "public_comment" # comments from public readers
 
 REVISION_TO_INDEX = {
     EventType.PRE_REBUTTAL_REVISION:    1,
@@ -64,16 +71,20 @@ REVISION_TO_INDEX = {
     EventType.FINAL_REVISION:           3,
 }
 
-# TODO Map conference-specific comment event types to our unified set of event types
+# Map conference-specific comment event types to our unified set of event types.
 # This function handles comment notes, but not paper revisions.
-def get_comment_event_type(note, conference):
-    if conference == "iclr_2022":
-        if "review" in note.content:
-            return EventType.REVIEW
-        elif "Decision" in note.invitation:
-            return EventType.METAREVIEW
-        else: # "Official_Comment" in note.
-            return EventType.COMMENT
+# See notebooks in the explore_conferences directory for conference-specific event types.
+def get_comment_event_type(note):
+    if "Official_Review" in note.invitation:
+        return EventType.REVIEW
+    elif "Decision" in note.invitation:
+        return EventType.METAREVIEW
+    elif "Official_Comment" in note.invitation:
+        return EventType.COMMENT
+    elif "Public_Comment" in note.invitation:
+        return EventType.PUBLIC_COMMENT
+    else:
+        raise ValueError("Unknown comment event type")
 
 
 class PDFStatus(object):

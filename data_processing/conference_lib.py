@@ -25,28 +25,12 @@ The datetime objects are then converted to Unix timestamps (ms).
 When there are multiple times for an occasion and we couldn't tell 
 which is the most precise, we do the following.
 1. review_release is used to get the last pre-rebuttal paper revision. We use the
-earliest candidate to avoid mistakenly retrieving a revision during rebuttal.
-2. rebuttal_end is used to get the last rebuttal revision. We use the latest 
+EARLIEST candidate to avoid mistakenly retrieving a revision during rebuttal.
+2. rebuttal_end is used to get the last rebuttal revision. We use the LATEST 
 candidate to avoid missing a revision during rebuttal.
 """
 # TODO
 CONFERENCE_TO_TIMES = {
-    "iclr_2018": {
-        "review_release":   dt_to_unix(dt(0, 0, 0, 0, 0, 0)),
-        "rebuttal_end":     dt_to_unix(dt(0, 0, 0, 0, 0, 0)),
-    },
-    "iclr_2019": {
-        "review_release":   dt_to_unix(dt(0, 0, 0, 0, 0, 0)),
-        "rebuttal_end":     dt_to_unix(dt(0, 0, 0, 0, 0, 0)),
-    },
-    "iclr_2020": {
-        "review_release":   dt_to_unix(dt(0, 0, 0, 0, 0, 0)),
-        "rebuttal_end":     dt_to_unix(dt(0, 0, 0, 0, 0, 0)),
-    },
-    "iclr_2021": {
-        "review_release":   dt_to_unix(dt(0, 0, 0, 0, 0, 0)),
-        "rebuttal_end":     dt_to_unix(dt(0, 0, 0, 0, 0, 0)),
-    },
     "iclr_2022": {
         "review_release":   dt_to_unix(dt(2021, 11, 9, 0, 0, 0)),
         "rebuttal_end":     dt_to_unix(dt(2021, 11, 24, 0, 30, 0)),
@@ -54,4 +38,3 @@ CONFERENCE_TO_TIMES = {
 }
 for conf in CONFERENCE_TO_TIMES:
     assert CONFERENCE_TO_TIMES[conf]["review_release"] < CONFERENCE_TO_TIMES[conf]["rebuttal_end"]
-print(CONFERENCE_TO_DEADLINES)
