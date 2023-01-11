@@ -29,10 +29,9 @@ EARLIEST candidate to avoid mistakenly retrieving a revision during rebuttal.
 2. rebuttal_end is used to get the last rebuttal revision. We use the LATEST 
 candidate to avoid missing a revision during rebuttal.
 """
-# TODO
 CONFERENCE_TO_TIMES = {
     "iclr_2022": {
-        "review_release":   dt_to_unix(dt(2021, 11, 9, 0, 0, 0)),
+        "review_release":   dt_to_unix(dt(2021, 11, 9, 7, 59, 0)),
         "rebuttal_end":     dt_to_unix(dt(2021, 11, 24, 0, 30, 0)),
     },
 }

@@ -244,7 +244,7 @@ def main():
         key=lambda x: x.tcdate,
     )
 
-    if args.batch_size <= 0 or args.batch_size is None:
+    if args.batch_size is None or args.batch_size <= 0:
         args.batch_size = len(forum_notes) - args.offset
         n_batches = 1
     else:
