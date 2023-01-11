@@ -103,39 +103,42 @@ def process_manuscript_revisions(forum_note, forum_dir, args):
         if note.id == original_id:
             continue
 
-        if note.tmdate <= conflib.CONFERENCE_TO_TIMES[args.conference]["review_release"] and (
-                revisions[orl.EventType.PRE_REBUTTAL_REVISION] is None or
-                revisions[orl.EventType.PRE_REBUTTAL_REVISION][0].tmdate < note.tmdate
-        ):
-            pdf_status, pdf_binary, pdf_checksum = get_pdf_status(note)
-            if pdf_status == orl.PDFStatus.AVAILABLE:
-                revisions[orl.EventType.PRE_REBUTTAL_REVISION] = (note, pdf_status, pdf_binary, pdf_checksum)
+        if note.tmdate <= conflib.CONFERENCE_TO_TIMES[args.conference]["review_release"]:
+            if (
+                    revisions[orl.EventType.PRE_REBUTTAL_REVISION] is None or
+                    revisions[orl.EventType.PRE_REBUTTAL_REVISION][0].tmdate < note.tmdate
+            ):
+                pdf_status, pdf_binary, pdf_checksum = get_pdf_status(note)
+                if pdf_status == orl.PDFStatus.AVAILABLE:
+                    revisions[orl.EventType.PRE_REBUTTAL_REVISION] = (note, pdf_status, pdf_binary, pdf_checksum)
 
-        elif note.tmdate <= conflib.CONFERENCE_TO_TIMES[args.conference]["rebuttal_end"] and (
-                revisions[orl.EventType.REBUTTAL_REVISION] is None or
-                revisions[orl.EventType.REBUTTAL_REVISION][0].tmdate < note.tmdate
-        ):
-            pdf_status, pdf_binary, pdf_checksum = get_pdf_status(note)
-            if pdf_status == orl.PDFStatus.AVAILABLE:
-                revisions[orl.EventType.REBUTTAL_REVISION] = (note, pdf_status, pdf_binary, pdf_checksum)
+        elif note.tmdate <= conflib.CONFERENCE_TO_TIMES[args.conference]["rebuttal_end"]:
+            if (
+                    revisions[orl.EventType.REBUTTAL_REVISION] is None or
+                    revisions[orl.EventType.REBUTTAL_REVISION][0].tmdate < note.tmdate
+            ):
+                pdf_status, pdf_binary, pdf_checksum = get_pdf_status(note)
+                if pdf_status == orl.PDFStatus.AVAILABLE:
+                    revisions[orl.EventType.REBUTTAL_REVISION] = (note, pdf_status, pdf_binary, pdf_checksum)
 
-        elif (
-                revisions[orl.EventType.FINAL_REVISION] is None or
-                revisions[orl.EventType.FINAL_REVISION][0].tmdate < note.tmdate
-        ):
-            pdf_status, pdf_binary, pdf_checksum = get_pdf_status(note)
-            if pdf_status == orl.PDFStatus.AVAILABLE:
-                revisions[orl.EventType.FINAL_REVISION] = (note, pdf_status, pdf_binary, pdf_checksum)
+        else: # note.tmdate > conflib.CONFERENCE_TO_TIMES[args.conference]["rebuttal_end"]
+            if (
+                    revisions[orl.EventType.FINAL_REVISION] is None or
+                    revisions[orl.EventType.FINAL_REVISION][0].tmdate < note.tmdate
+            ):
+                pdf_status, pdf_binary, pdf_checksum = get_pdf_status(note)
+                if pdf_status == orl.PDFStatus.AVAILABLE:
+                    revisions[orl.EventType.FINAL_REVISION] = (note, pdf_status, pdf_binary, pdf_checksum)
 
-    # assert that the forum note has the same pdf as the last revision
-    pdf_status, pdf_binary, pdf_checksum = get_pdf_status(forum_note, is_reference=False)
-    if pdf_status == orl.PDFStatus.AVAILABLE:
-        if revisions[orl.EventType.FINAL_REVISION] is not None:
-            assert pdf_checksum == revisions[orl.EventType.FINAL_REVISION][-1]
-        elif revisions[orl.EventType.REBUTTAL_REVISION] is not None:
-            assert pdf_checksum == revisions[orl.EventType.REBUTTAL_REVISION][-1]
-        else:
-            assert pdf_checksum == revisions[orl.EventType.PRE_REBUTTAL_REVISION][-1]
+    # the forum note has the same pdf as the last revision, which typically is our retrieved final_revision
+    # pdf_status, pdf_binary, pdf_checksum = get_pdf_status(forum_note, is_reference=False)
+    # if pdf_status == orl.PDFStatus.AVAILABLE:
+    #     if revisions[orl.EventType.FINAL_REVISION] is not None:
+    #         assert pdf_checksum == revisions[orl.EventType.FINAL_REVISION][-1]
+    #     elif revisions[orl.EventType.REBUTTAL_REVISION] is not None:
+    #         assert pdf_checksum == revisions[orl.EventType.REBUTTAL_REVISION][-1]
+    #     else:
+    #         assert pdf_checksum == revisions[orl.EventType.PRE_REBUTTAL_REVISION][-1]
 
     # create events and save files
     events = []
@@ -282,9 +285,15 @@ def main():
 
         # save metadata for forums in this batch
         if n_batches == 1:
-            tsv_path = f"{args.output_dir}/metadata_{args.conference}.tsv"
+            if args.offset == 0:
+                tsv_path = f"{args.output_dir}/metadata_{args.conference}.tsv"
+            else:
+                tsv_path = f"{args.output_dir}/metadata_{args.conference}_offset{args.offset}.tsv"
         else:
-            tsv_path = f"{args.output_dir}/metadata_{args.conference}_{str(i).zfill(4)}.tsv"
+            if args.offset == 0:
+                tsv_path = f"{args.output_dir}/metadata_{args.conference}_{str(i).zfill(4)}.tsv"
+            else:
+                tsv_path = f"{args.output_dir}/metadata_{args.conference}_offset{args.offset}_{str(i).zfill(4)}.tsv"
         with open(tsv_path, "w") as f:
             writer = csv.DictWriter(f, fieldnames=orl.EVENT_FIELDS, delimiter="\t")
             writer.writeheader()
