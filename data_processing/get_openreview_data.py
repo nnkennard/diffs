@@ -103,7 +103,7 @@ def process_manuscript_revisions(forum_note, forum_idx, forum_dir, args):
         if note.id == original_id:
             continue
 
-        if note.tmdate <= conflib.CONFERENCE_TO_TIMES[args.conference]["review_release"]:
+        if note.tmdate <= conflib.CONFERENCE_TO_TIMES[args.conference]["review_notification"]:
             if (
                     revisions[orl.EventType.PRE_REBUTTAL_REVISION] is None or
                     revisions[orl.EventType.PRE_REBUTTAL_REVISION][0].tmdate < note.tmdate
@@ -112,7 +112,7 @@ def process_manuscript_revisions(forum_note, forum_idx, forum_dir, args):
                 if pdf_status == orl.PDFStatus.AVAILABLE:
                     revisions[orl.EventType.PRE_REBUTTAL_REVISION] = (note, pdf_status, pdf_binary, pdf_checksum)
 
-        elif note.tmdate <= conflib.CONFERENCE_TO_TIMES[args.conference]["rebuttal_end"]:
+        elif note.tmdate <= conflib.CONFERENCE_TO_TIMES[args.conference]["decision_notification"]:
             if (
                     revisions[orl.EventType.REBUTTAL_REVISION] is None or
                     revisions[orl.EventType.REBUTTAL_REVISION][0].tmdate < note.tmdate
@@ -121,7 +121,7 @@ def process_manuscript_revisions(forum_note, forum_idx, forum_dir, args):
                 if pdf_status == orl.PDFStatus.AVAILABLE:
                     revisions[orl.EventType.REBUTTAL_REVISION] = (note, pdf_status, pdf_binary, pdf_checksum)
 
-        else: # note.tmdate > conflib.CONFERENCE_TO_TIMES[args.conference]["rebuttal_end"]
+        else: # note.tmdate > conflib.CONFERENCE_TO_TIMES[args.conference]["decision_notification"]
             if (
                     revisions[orl.EventType.FINAL_REVISION] is None or
                     revisions[orl.EventType.FINAL_REVISION][0].tmdate < note.tmdate
