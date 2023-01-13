@@ -31,8 +31,8 @@ candidate to avoid missing a revision during rebuttal.
 """
 CONFERENCE_TO_TIMES = {
     "iclr_2022": {
-        "review_notification":   dt_to_unix(dt(2021, 11, 9, 7, 59, 0)),
-        "decision_notification": dt_to_unix(dt(2021, 11, 24, 0, 30, 0)),
+        "review_notification":   dt_to_unix(dt(2021, 11, 9, 6, 32, 0)),
+        "decision_notification": dt_to_unix(dt(2022, 1, 20, 18, 35, 0)),
     },
 }
 for conf in CONFERENCE_TO_TIMES:
