@@ -3,11 +3,14 @@ import collections
 import glob
 import json
 import myers
+import os
 import re
 import stanza
 import tqdm
 
+from datetime import datetime
 from tika import parser
+import openreview_lib as orl
 
 arg_parser = argparse.ArgumentParser(description="")
 arg_parser.add_argument("-d", "--directory", default="", type=str, help="")
@@ -21,7 +24,8 @@ STANZA_PIPELINE = stanza.Pipeline(
     "en",
     processors="tokenize",
 )
-VERSIONS = ["first", "last"]
+VERSIONS = [orl.EventType.PRE_REBUTTAL_REVISION, orl.EventType.FINAL_REVISION]
+FIRST, LAST = VERSIONS
 PLACEHOLDER = "$$$$$$$$"
 
 def extract_text(pdf_path):
@@ -67,6 +71,8 @@ def make_diffs(first_tokens_sentencized, last_tokens_sentencized, check=False):
   last_tokens = sum(last_tokens_sentencized, [])
   if first_tokens == last_tokens:
     return
+
+  print(f"Starting diff {datetime.now().strftime('%H:%M:%S')}")
   myers_diff = myers.diff(first_tokens, last_tokens)
   first_file_indices = []
   current_first_file_index = -1
@@ -99,14 +105,14 @@ def make_diffs(first_tokens_sentencized, last_tokens_sentencized, check=False):
 
   return {
       "tokens": {
-          "first": first_tokens_sentencized,
-          "last": last_tokens_sentencized
+          FIRST: first_tokens_sentencized,
+          LAST: last_tokens_sentencized
       },
       "diffs":
           sorted([d._asdict() for d in diff_map.values()],
                  key=lambda x: x["location"]),
           }
- 
+
 
 def main():
 
@@ -115,6 +121,13 @@ def main():
   for directory_name in tqdm.tqdm(
       glob.glob(f"{args.directory}/{args.conference}/*")):
     forum = directory_name.split("/")[-1]
+    version_missing = False
+    for version in VERSIONS:
+      if not os.path.exists(f'{directory_name}/{version}.pdf'):
+        print(f"Skipping {forum}, no {version}")
+        version_missing = True
+    if version_missing:
+      continue
     texts = {
         version: extract_text(f"{directory_name}/{version}.pdf")
         for version in VERSIONS
@@ -125,8 +138,8 @@ def main():
     with open(f"{directory_name}/diffs.json", "w") as g:
       json.dump(
           make_diffs(
-            tokens['first'],
-            tokens['last']), g)
+            tokens[FIRST],
+            tokens[LAST]), g)
 
 
 if __name__ == "__main__":
