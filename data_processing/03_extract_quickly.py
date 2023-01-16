@@ -185,11 +185,11 @@ def main():
   for directory_name in tqdm.tqdm(
       glob.glob(f"{args.directory}/{args.conference}/*")[10:]):
     forum = directory_name.split("/")[-1]
-    print(f'Forum: {forum}')
+    print(f'Forum: {forum} ', end="")
     version_missing = False
     for version in VERSIONS:
       if not os.path.exists(f'{directory_name}/{version}.pdf'):
-        print(f"Skipping {forum}, no {version}")
+        print(f"Skipping; no {version}")
         version_missing = True
     if version_missing:
       continue
@@ -205,9 +205,10 @@ def main():
             tokens[FIRST],
             tokens[LAST])
       if maybe_diffs is not None:
+        print("Success")
         json.dump(maybe_diffs, g)
       else:
-        print("Diff error, {forum}")
+        print("Diff error")
 
 if __name__ == "__main__":
   main()
