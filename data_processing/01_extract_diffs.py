@@ -119,7 +119,7 @@ def main():
   args = arg_parser.parse_args()
 
   for directory_name in tqdm.tqdm(
-      glob.glob(f"{args.directory}/{args.conference}/*")):
+      glob.glob(f"{args.directory}/{args.conference}/*")[10:]):
     forum = directory_name.split("/")[-1]
     version_missing = False
     for version in VERSIONS:
